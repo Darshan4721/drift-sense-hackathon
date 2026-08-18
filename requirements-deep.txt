@@ -1,4 +1,0 @@
-# Convenience requirement for installations that prefer a small base set plus PyTorch.
--r requirements-inference.txt
-torch==2.4.1
-
