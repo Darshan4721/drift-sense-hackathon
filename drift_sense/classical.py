@@ -9,7 +9,7 @@ import cv2
 import numpy as np
 
 from .config import SEARCH_SCALES
-from .image_utils import gradient_magnitude, normalize_contrast
+from .image_utils import apply_prefilter, gradient_magnitude, normalize_contrast
 
 
 @dataclass
@@ -94,27 +94,37 @@ def generate_candidates(
     scales: Iterable[float] = SEARCH_SCALES,
     top_k_per_scale: int = 8,
     rotations: Iterable[float] = (-3.0, -2.0, -1.0, 0.0, 1.0, 2.0, 3.0),
+    prefilter: str = "none",
 ) -> list[Candidate]:
     """Generate candidate centers over the known approximately 0.1 scale range."""
 
-    reference = normalize_contrast(reference)
-    search = normalize_contrast(search)
+    ref_norm = normalize_contrast(reference)
+    search_norm = normalize_contrast(search)
+    if prefilter != "none":
+        ref_corr = apply_prefilter(ref_norm, prefilter)
+        search_corr = apply_prefilter(search_norm, prefilter)
+    else:
+        ref_corr = ref_norm
+        search_corr = search_norm
     all_candidates: list[Candidate] = []
     for scale in scales:
         width = max(24, int(round(reference.shape[1] * float(scale))))
         height = max(24, int(round(reference.shape[0] * float(scale))))
         if width >= search.shape[1] or height >= search.shape[0]:
             continue
-        base_template = cv2.resize(reference, (width, height), interpolation=cv2.INTER_AREA)
+        base_template_corr = cv2.resize(ref_corr, (width, height), interpolation=cv2.INTER_AREA)
+        base_template_orig = cv2.resize(ref_norm, (width, height), interpolation=cv2.INTER_AREA) if prefilter != "none" else base_template_corr
         for rotation in rotations:
             if abs(float(rotation)) > 1e-6:
                 matrix = cv2.getRotationMatrix2D((width / 2.0, height / 2.0), float(rotation), 1.0)
-                template = cv2.warpAffine(base_template, matrix, (width, height), borderMode=cv2.BORDER_REFLECT_101)
+                template_corr = cv2.warpAffine(base_template_corr, matrix, (width, height), borderMode=cv2.BORDER_REFLECT_101)
+                template_orig = cv2.warpAffine(base_template_orig, matrix, (width, height), borderMode=cv2.BORDER_REFLECT_101) if prefilter != "none" else template_corr
             else:
-                template = base_template
-            score_map = _correlation_map(search, template)
+                template_corr = base_template_corr
+                template_orig = base_template_orig
+            score_map = _correlation_map(search_corr, template_corr)
             for x, y, _ in _top_local_maxima(score_map, top_k_per_scale, max(8, min(width, height) // 3)):
-                intensity, edge, structure, periodicity = _local_feature_score(search, template, x, y)
+                intensity, edge, structure, periodicity = _local_feature_score(search_norm, template_orig, x, y)
                 all_candidates.append(
                     Candidate(
                         x=x + width / 2.0,

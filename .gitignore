@@ -17,3 +17,11 @@ test_100_samples/
 test_100_results/
 results_heldout_*/
 *.DS_Store
+
+# Generated benchmark datasets and large image artifact directories
+data_bench_*/
+data_fresh_*/
+tuning_data_*/
+heldout_*/
+results_bench_*/
+results_fresh_*/

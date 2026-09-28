@@ -107,3 +107,29 @@ def test_save_grayscale_round_trip(tmp_path: Path) -> None:
     loaded = load_grayscale(path)
     assert loaded.shape == source.shape
     assert abs(float(loaded.mean()) - 0.5) < 0.01
+
+
+def test_prefilter_options_execute_cleanly(tmp_path: Path) -> None:
+    output = tmp_path / "data"
+    write_dataset(output, 1, "DRAM", 42)
+    ref = output / "reference" / "ref_000001.png"
+    srch = output / "search" / "search_000001.png"
+    for prefilter in ["none", "dog", "log", "lcn"]:
+        cmd = [
+            sys.executable,
+            "localize.py",
+            "--reference",
+            str(ref),
+            "--search",
+            str(srch),
+            "--method",
+            "classical",
+            "--prefilter",
+            prefilter,
+            "--candidate-pool",
+            "32",
+        ]
+        completed = subprocess.run(cmd, capture_output=True, text=True, check=True, cwd=Path(__file__).parents[1])
+        assert completed.stdout.strip().startswith("(")
+        assert completed.stdout.strip().endswith(")")
+

@@ -76,6 +76,49 @@ def edge_enhance(image: np.ndarray, alpha: float) -> np.ndarray:
     return np.clip(image + float(alpha) * gradient_magnitude(image), 0.0, 1.0)
 
 
+def apply_dog(image: np.ndarray, sigma1: float = 1.0, sigma2: float = 2.5) -> np.ndarray:
+    """Difference-of-Gaussians bandpass filter to suppress low-frequency illumination and high-frequency noise."""
+
+    g1 = cv2.GaussianBlur(image.astype(np.float32), (0, 0), float(sigma1))
+    g2 = cv2.GaussianBlur(image.astype(np.float32), (0, 0), float(sigma2))
+    dog = g1 - g2
+    return normalize_contrast(dog)
+
+
+def apply_log(image: np.ndarray, sigma: float = 1.5) -> np.ndarray:
+    """Laplacian-of-Gaussian filter for edge and feature enhancement."""
+
+    blurred = cv2.GaussianBlur(image.astype(np.float32), (0, 0), float(sigma))
+    log = cv2.Laplacian(blurred, cv2.CV_32F, ksize=3)
+    return normalize_contrast(log)
+
+
+def apply_lcn(image: np.ndarray, sigma: float = 4.0) -> np.ndarray:
+    """Local contrast normalization using local Gaussian neighborhood mean and variance."""
+
+    img = image.astype(np.float32)
+    mu = cv2.GaussianBlur(img, (0, 0), float(sigma))
+    diff = img - mu
+    var = cv2.GaussianBlur(diff * diff, (0, 0), float(sigma))
+    std = np.sqrt(np.maximum(var, 0.0)) + 1e-4
+    lcn = diff / std
+    return normalize_contrast(lcn)
+
+
+def apply_prefilter(image: np.ndarray, method: str = "none") -> np.ndarray:
+    """Apply the specified prefilter method ('none', 'dog', 'log', 'lcn'). Defaults to 'none'."""
+
+    if method == "none" or not method:
+        return image
+    if method == "dog":
+        return apply_dog(image)
+    if method == "log":
+        return apply_log(image)
+    if method == "lcn":
+        return apply_lcn(image)
+    raise ValueError(f"Unknown prefilter method: {method}. Allowed: 'none', 'dog', 'log', 'lcn'")
+
+
 def center_from_bbox(x0: float, y0: float, width: float, height: float) -> tuple[float, float]:
     """Convert top-left plus dimensions to an (x, y) center."""
 

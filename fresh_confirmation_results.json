@@ -1,0 +1,92 @@
+{
+  "dram_default_fresh": {
+    "none": {
+      "name": "Fresh DRAM Default",
+      "prefilter": "none",
+      "accuracy_5px": 90.0,
+      "median_error": 0.4416289424071538,
+      "mean_error": 32.70389805571579,
+      "p95_error": 322.8822060379946,
+      "total_fails": 15,
+      "flagged_fails": 14,
+      "fail_catch_rate": 93.33333333333333,
+      "false_alarms": 13,
+      "false_alarm_rate": 9.62962962962963,
+      "avg_time": 1.1862769693333393
+    },
+    "dog": {
+      "name": "Fresh DRAM Default",
+      "prefilter": "dog",
+      "accuracy_5px": 90.0,
+      "median_error": 0.4459485823754059,
+      "mean_error": 40.13263688140659,
+      "p95_error": 382.51198692978363,
+      "total_fails": 15,
+      "flagged_fails": 11,
+      "fail_catch_rate": 73.33333333333333,
+      "false_alarms": 8,
+      "false_alarm_rate": 5.9259259259259265,
+      "avg_time": 1.0366312006666702
+    }
+  },
+  "finfet_default_fresh": {
+    "none": {
+      "name": "Fresh FinFET Default",
+      "prefilter": "none",
+      "accuracy_5px": 98.66666666666667,
+      "median_error": 0.47507340102303797,
+      "mean_error": 2.6298046954215017,
+      "p95_error": 0.9252903202309971,
+      "total_fails": 2,
+      "flagged_fails": 2,
+      "fail_catch_rate": 100.0,
+      "false_alarms": 4,
+      "false_alarm_rate": 2.7027027027027026,
+      "avg_time": 0.9390704853332985
+    },
+    "dog": {
+      "name": "Fresh FinFET Default",
+      "prefilter": "dog",
+      "accuracy_5px": 98.66666666666667,
+      "median_error": 0.4860503757875666,
+      "mean_error": 2.639154262133788,
+      "p95_error": 0.8358610815253695,
+      "total_fails": 2,
+      "flagged_fails": 2,
+      "fail_catch_rate": 100.0,
+      "false_alarms": 6,
+      "false_alarm_rate": 4.054054054054054,
+      "avg_time": 1.0005544773333532
+    }
+  },
+  "dram_degraded_fresh": {
+    "none": {
+      "name": "Fresh DRAM Degraded",
+      "prefilter": "none",
+      "accuracy_5px": 53.333333333333336,
+      "median_error": 0.9129965412568012,
+      "mean_error": 169.74889292704881,
+      "p95_error": 543.369865104355,
+      "total_fails": 70,
+      "flagged_fails": 68,
+      "fail_catch_rate": 97.14285714285714,
+      "false_alarms": 63,
+      "false_alarm_rate": 78.75,
+      "avg_time": 0.9547168559999772
+    },
+    "dog": {
+      "name": "Fresh DRAM Degraded",
+      "prefilter": "dog",
+      "accuracy_5px": 38.0,
+      "median_error": 220.8818115513538,
+      "mean_error": 217.89252759071465,
+      "p95_error": 582.1380949918474,
+      "total_fails": 93,
+      "flagged_fails": 90,
+      "fail_catch_rate": 96.7741935483871,
+      "false_alarms": 46,
+      "false_alarm_rate": 80.7017543859649,
+      "avg_time": 1.0300558886666962
+    }
+  }
+}

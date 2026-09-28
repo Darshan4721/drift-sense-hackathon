@@ -38,7 +38,15 @@ def _failure_category(error: float, candidate_gap: float, row: dict[str, str], p
     return "multiple_equally_valid_candidates"
 
 
-def evaluate(data_dir: str | Path, checkpoint: str | Path | None, tolerance: float, output_dir: str | Path, method: str = "hybrid") -> dict[str, Any]:
+def evaluate(
+    data_dir: str | Path,
+    checkpoint: str | Path | None,
+    tolerance: float,
+    output_dir: str | Path,
+    method: str = "hybrid",
+    prefilter: str = "none",
+    candidate_pool_size: int = 16,
+) -> dict[str, Any]:
     """Run inference on every annotation and write all requested artifacts."""
 
     data_path, output_path = Path(data_dir), Path(output_dir)
@@ -61,12 +69,21 @@ def evaluate(data_dir: str | Path, checkpoint: str | Path | None, tolerance: flo
         search_path = data_path / row["search_path"]
         truth = (float(row["x"]), float(row["y"]))
         start = time.perf_counter()
-        best, ranked, details = localize(reference_path, search_path, method=method, checkpoint=checkpoint)
+        best, ranked, details = localize(
+            reference_path,
+            search_path,
+            method=method,
+            checkpoint=checkpoint,
+            prefilter=prefilter,
+            candidate_pool_size=candidate_pool_size,
+        )
         elapsed = time.perf_counter() - start
         prediction = (float(best.x), float(best.y))
         error = float(np.hypot(prediction[0] - truth[0], prediction[1] - truth[1]))
-        confidence = float(np.clip((best.combined_score + 1.0) / 2.0, 0.0, 1.0))
-        if confidence < 0.5:
+        calib = details.get("confidence_calibration", {})
+        confidence = float(calib.get("confidence", np.clip((best.combined_score + 1.0) / 2.0, 0.0, 1.0)))
+        is_low_conf = bool(calib.get("low_confidence", confidence < 0.5))
+        if is_low_conf or confidence < 0.5:
             low_confidence += 1
         times.append(elapsed)
         errors.append(error)
@@ -80,6 +97,9 @@ def evaluate(data_dir: str | Path, checkpoint: str | Path | None, tolerance: flo
             "true_y": truth[1],
             "error": error,
             "confidence": confidence,
+            "low_confidence": is_low_conf,
+            "margin_distant": calib.get("margin_distant", 0.0),
+            "psr": calib.get("psr", 0.0),
             "inference_seconds": elapsed,
             "method": method,
             "scale": best.scale,
@@ -140,6 +160,7 @@ def evaluate(data_dir: str | Path, checkpoint: str | Path | None, tolerance: flo
         "maximum_inference_seconds": float(times_array.max()),
         "failure_count": int(np.sum(errors_array > tolerance)),
         "low_confidence_count": low_confidence,
+        "low_confidence_rate": float(low_confidence / len(rows)),
         "tolerance": tolerance,
         "method": method,
     }
@@ -178,8 +199,18 @@ def main() -> None:
     parser.add_argument("--tolerance", type=float, default=5.0)
     parser.add_argument("--output-dir", default="results")
     parser.add_argument("--method", choices=["hybrid", "classical", "deep"], default="hybrid")
+    parser.add_argument("--prefilter", choices=["none", "dog", "log", "lcn"], default="none")
+    parser.add_argument("--candidate-pool", type=int, default=16)
     args = parser.parse_args()
-    evaluate(args.data_dir, args.checkpoint, args.tolerance, args.output_dir, args.method)
+    evaluate(
+        args.data_dir,
+        args.checkpoint,
+        args.tolerance,
+        args.output_dir,
+        args.method,
+        prefilter=args.prefilter,
+        candidate_pool_size=args.candidate_pool,
+    )
 
 
 if __name__ == "__main__":
